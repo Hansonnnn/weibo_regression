@@ -1,6 +1,7 @@
 import pandas as pd
 from pandas.tseries.holiday import USFederalHolidayCalendar as calendar
 from sklearn.linear_model import LinearRegression
+from evaluate import score
 import numpy as np
 import re
 
@@ -24,7 +25,6 @@ class Model:
         self.predict_data = pd.read_table('./input/weibo_predict_data.txt', names=test_col_name)
 
     def split_data_set(self):
-        self.train_data = self.train_data[0:4000]
         self.train_data['time'] = self.train_data['time'].apply(lambda x: pd.to_datetime(x, format='%Y-%m-%d %H:%M:%S'))
 
         train_data1 = self.train_data[(self.train_data['time'] >= pd.to_datetime('20150201')) & (
@@ -53,12 +53,12 @@ class Model:
             self.handle_user(data_frame)
             self.handle_date(data_frame)
             self.handle_content(data_frame)
-            data_frame.drop(['uid', 'time', 'content'], axis=1, inplace=True)
+            data_frame.drop(['mid', 'time', 'content'], axis=1, inplace=True)
         for data_frame in self.test_set:
             self.handle_user(data_frame)
             self.handle_date(data_frame)
             self.handle_content(data_frame)
-            data_frame.drop(['uid', 'time', 'content'], axis=1, inplace=True)
+            data_frame.drop(['mid', 'time', 'content'], axis=1, inplace=True)
         print("feature engineering ending...")
 
     """time's feature"""
@@ -192,6 +192,18 @@ class Model:
         dataframe['if_reference'] = dataframe['content'].apply(lambda x: 1 if reference_pattern.findall(x) else 0)
         dataframe['if_url'] = dataframe['content'].apply(lambda x: 1 if url_pattern.findall(x) else 0)
         dataframe['char_lens'] = dataframe['content'].apply(lambda x: len(x))
+
+    def train(self):
+        for i in range(0, len(self.train_set)):
+            lc = self.train_set[i]['like_count']
+            fc = self.train_set[i]['forward_count']
+            cc = self.train_set[i]['comment_count']
+            self.train_set[i].drop(['like_count', 'forward_count', 'comment_count'], inplace=True)
+            lm = LinearRegression()
+            lm.fit(self.train_set[i], [lc, fc, cc])
+            lp, fp, cp = lm.predict(self.test_set[i])
+            precision = score([lc, fc, cc], [lp, fp, cp])
+            print("the {} batch with precision is :{}".format(i, precision))
 
 
 m = Model()
