@@ -52,36 +52,48 @@ class Model:
 
     def feature_engineering(self):
         def train_feature():
+            print('==============current thread name is {%s}' % threading.current_thread().name)
             for data_frame in self.train_set:
                 data_frame[['like_count', 'forward_count', 'comment_count']].fillna(0, inplace=True)
                 data_frame['content'].replace(np.nan, " ", inplace=True)
                 i = 0
-                self.handle_date(data_frame)
-                self.handle_content(data_frame)
-                self.handle_user(data_frame)
+                t1 = threading.Thread(target=self.handle_date, name='train_set.date', args=(data_frame,))
+                t2 = threading.Thread(target=self.handle_user, name='train_set.user', args=(data_frame,))
+                t3 = threading.Thread(target=self.handle_content, name='train_set.content', args=(data_frame,))
+                t1.start()
+                t2.start()
+                t3.start()
                 print('==========train_set output to csv file ===========')
                 data_frame.to_csv('train_set' + str(i) + '.csv')
                 i += 1
 
         def test_feature():
+            print('==============current thread name is {%s}' % threading.current_thread().name)
             for data_frame in self.test_set:
+                i = 0
                 data_frame[['like_count', 'forward_count', 'comment_count']].fillna(0, inplace=True)
                 data_frame['content'].replace(np.nan, " ", inplace=True)
-                i = 0
-                self.handle_date(data_frame)
-                self.handle_content(data_frame)
-                self.handle_user(data_frame)
+                t1 = threading.Thread(target=self.handle_date, name='test_set.date', args=(data_frame,))
+                t2 = threading.Thread(target=self.handle_user, name='test_set.user', args=(data_frame,))
+                t3 = threading.Thread(target=self.handle_content, name='test_set.content', args=(data_frame,))
+                t1.start()
+                t2.start()
+                t3.start()
                 print('==========output to csv file ===========')
                 data_frame.to_csv('train_set' + str(i) + '.csv')
                 i += 1
 
-        train_feature()
-        test_feature()
+        t1 = threading.Thread(target=train_feature, name='train_set')
+        t2 = threading.Thread(target=test_feature, name='test_set')
+        t1.start()
+        t2.start()
+
         print("feature engineering ending...")
 
     """time's feature"""
 
     def handle_date(self, dataframe):
+        print('================current thread name is {%s}' % threading.current_thread().name)
         dataframe['weekday'] = dataframe['time'].dt.weekday
         dataframe['hour_seg'] = dataframe['time'].dt.hour
         dataframe['isWeekend'] = dataframe['weekday'].apply(lambda x: 1 if x == 5 or x == 6 else 0)
@@ -96,6 +108,7 @@ class Model:
     """user's feature"""
 
     def handle_user(self, dataframe):
+        print('=================current thread name is {%s}' % threading.current_thread().name)
         grouped = dataframe.groupby(['uid'], as_index=False)
         # max feature
         max_forward_count = grouped[['forward_count']].max()
@@ -203,6 +216,7 @@ class Model:
     """content's feature"""
 
     def handle_content(self, dataframe):
+        print('==================current thread name is {%s}' % threading.current_thread().name)
         topic_pattern = re.compile(r'#.+#')
         reference_pattern = re.compile(r'【.+】')
         url_pattern = re.compile(r'[a-zA-z]+://[^\s]*')
