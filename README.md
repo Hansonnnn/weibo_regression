@@ -1,8 +1,7 @@
 ## 新浪微博互动预测-挑战Baseline
 
-https://tianchi.aliyun.com/competition/entrance/231574/information
-该仓库用来记录我参加新浪预测比赛的思路及代码过程。
-
+- 该仓库用来记录我参加新浪预测比赛的思路及代码过程。
+- 比赛地址：https://tianchi.aliyun.com/competition/entrance/231574/information
 ### Step 1 数据预处理
 - 空值处理
 - 测试集和训练集划分
