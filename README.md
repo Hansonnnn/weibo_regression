@@ -132,7 +132,7 @@ def assert_keyword(self, content):
             return 0
 ```
 - 博文中出现关键词的个数
-```
+```python
 dataframe['count_keywords'] = dataframe['content'].apply(lambda x: self.count_keyword(x))
 
 def count_keyword(self, content):
