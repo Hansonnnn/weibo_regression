@@ -106,3 +106,39 @@ dataframe['if_url'] = dataframe['content'].apply(lambda x: 1 if url_pattern.find
 ```
 dataframe['content'].apply(lambda x: len(x))
 ```
+### 4.提取关键词
+
+- 选择博文中出现词频较高的词，top20作为关键词。
+
+```python 
+def get_topk_word(self, dataframe):
+    content_list = dataframe['content'].to_list()
+    content_list = [re.sub(r'[^\u4e00-\u9fa5]', '', content) for content in content_list]
+    all_content_str = ''.join(content for content in content_list)
+    keywords = self.tfidf(all_content_str)
+    return keywords
+```
+
+- 博文中是否存在关键
+词
+```python
+dataframe['if_keywords'] = dataframe['content'].apply(lambda x: self.assert_keyword(x))
+
+def assert_keyword(self, content):
+    for keyword in self.keywords:
+        if keyword in content:
+            return 1
+        else:
+            return 0
+```
+- 博文中出现关键词的个数
+```
+dataframe['count_keywords'] = dataframe['content'].apply(lambda x: self.count_keyword(x))
+
+def count_keyword(self, content):
+    count = 0
+    for keyword in self.keywords:
+        if keyword in content:
+            count += 1
+    return count
+```

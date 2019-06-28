@@ -4,6 +4,7 @@ from sklearn.linear_model import LinearRegression
 from evaluate import score
 import numpy as np
 import re
+from jieba import analyse
 
 import threading
 
@@ -15,8 +16,10 @@ class Feature:
         self.train_set = []
         self.test_set = []
         self.predict_user_feature = []
+        self.tfidf = analyse.extract_tags
         self.load_data()
         self.split_data_set()
+        self.keywords = self.get_topk_word(self.train_data)
         self.feature_engineering()
 
     def load_data(self):
@@ -222,23 +225,30 @@ class Feature:
         dataframe['if_reference'] = dataframe['content'].apply(lambda x: 1 if reference_pattern.findall(x) else 0)
         dataframe['if_url'] = dataframe['content'].apply(lambda x: 1 if url_pattern.findall(x) else 0)
         dataframe['char_lens'] = dataframe['content'].apply(lambda x: len(x))
+        dataframe['if_keywords'] = dataframe['content'].apply(lambda x: self.assert_keyword(x))
+        dataframe['count_keywords'] = dataframe['content'].apply(lambda x: self.count_keyword(x))
         dataframe.drop(['content'], axis=1, inplace=True)
 
-    def train(self):
-        lm = LinearRegression()
-        for i in range(0, len(self.train_set)):
-            lc = self.train_set[i]['like_count']
-            fc = self.train_set[i]['forward_count']
-            cc = self.train_set[i]['comment_count']
-            self.train_set[i].drop(['like_count', 'forward_count', 'comment_count'], inplace=True)
-            lm.fit(self.train_set[i], [lc, fc, cc])
-            lp, fp, cp = lm.predict(self.test_set[i])
-            lr = self.test_set[i]['like_count']
-            fr = self.test_set[i]['forward_count']
-            cr = self.test_set[i]['comment_count']
-            self.test_set[i].drop(['like_count', 'forward_count', 'comment_count'], inplace=True)
-            precision = score([lr, fr, cr], [lp, fp, cp])
-            print("the {} batch with precision is :{}".format(i, precision))
+    def assert_keyword(self, content):
+        for keyword in self.keywords:
+            if keyword in content:
+                return 1
+            else:
+                return 0
+
+    def count_keyword(self, content):
+        count = 0
+        for keyword in self.keywords:
+            if keyword in content:
+                count += 1
+        return count
+
+    def get_topk_word(self, dataframe):
+        content_list = dataframe['content'].to_list()
+        content_list = [re.sub(r'[^\u4e00-\u9fa5]', '', content) for content in content_list]
+        all_content_str = ''.join(content for content in content_list)
+        keywords = self.tfidf(all_content_str)
+        return keywords
 
 
 m = Feature()
