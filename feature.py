@@ -244,7 +244,8 @@ class Feature:
         return count
 
     def get_topk_word(self, dataframe):
-        content_list = dataframe['content'].to_list()
+        dataframe['content_str'] = dataframe['content'].apply(lambda x: str(x))
+        content_list = dataframe['content_str'].to_list()
         content_list = [re.sub(r'[^\u4e00-\u9fa5]', '', content) for content in content_list]
         all_content_str = ''.join(content for content in content_list)
         keywords = self.tfidf(all_content_str)
