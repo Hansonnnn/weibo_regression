@@ -19,6 +19,7 @@ class Feature:
         self.tfidf = analyse.extract_tags
         self.load_data()
         self.split_data_set()
+        # 提取一次top20关键词就可以了，之后就可注掉
         self.keywords = self.get_topk_word(self.train_data)
         self.feature_engineering()
 
