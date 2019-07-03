@@ -245,11 +245,24 @@ class Feature:
         return count
 
     def get_topk_word(self, dataframe):
-        dataframe['content_str'] = dataframe['content'].apply(lambda x: str(x))
-        content_list = dataframe['content_str'].to_list()
-        content_list = [re.sub(r'[^\u4e00-\u9fa5]', '', content) for content in content_list]
-        all_content_str = ''.join(content for content in content_list)
-        keywords = self.tfidf(all_content_str)
+        batch = 50000
+        cur = 0
+        key_word_list = []
+        length = dataframe.ndim
+        while batch <= length:
+            if not (batch - length) < 50000:
+                batch_frame = dataframe[cur:length]
+            else:
+                batch_frame = dataframe[cur:batch]
+                cur += 50000
+                batch += 50000
+            batch_frame['content_str'] = batch_frame['content'].apply(lambda x: str(x))
+            content_list = batch_frame['content_str'].to_list()
+            content_list = [re.sub(r'[^\u4e00-\u9fa5]', '', content) for content in content_list]
+            all_content_str = ''.join(content for content in content_list)
+            keywords = self.tfidf(all_content_str)
+            key_word_list.append(keywords)
+        keywords = set(key_word_list[0]).intersection(*key_word_list[1:])
         return keywords
 
 
